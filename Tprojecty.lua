@@ -1,4 +1,4 @@
-script_version('6')
+script_version('7')
 
 local encoding = require('encoding')
 encoding.default = 'CP1251'
@@ -22,12 +22,12 @@ function checkUpdate()
                 if f then
                     f:write(script_content)
                     f:close()
-                    sampAddChatMessage('{33AAFF}[Updater]: {FFFFFF}Скрипт обновлен с версии {FF6347}' .. curver .. ' {FFFFFF}до {32CD32}' .. lastver .. '{FFFFFF}. Перезагрузка...', -1)
+                    sampAddChatMessage('{00FFFF}[Updater]: {FFFFFF}Скрипт обновлен с версии {00FFFF}' .. curver .. ' {FFFFFF}до {00FFFF}' .. lastver, -1)
                     thisScript():reload()
                 end
             end
         else
-            sampAddChatMessage('{33AAFF}[Updater]: {FFFFFF}У вас актуальная версия {32CD32}v' .. curver .. '{FFFFFF}.', -1)
+            sampAddChatMessage('{00FFFF}[Updater]: {FFFFFF}У вас актуальная версия {00FFFF}' .. curver .. '{FFFFFF}.', -1)
         end
     end
 end
