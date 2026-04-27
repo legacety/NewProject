@@ -1,45 +1,39 @@
-local requests = require('requests')
-local encoding = require('encoding')
-encoding.default = 'CP1251'
-local u8 = encoding.UTF8
-script_version("1.61")
+script_version("5.0")
 
-function checkUpdate()
-    lua_thread.create(function()
-        local ok, response = pcall(requests.get, "https://raw.githubusercontent.com/legacety/NewProject/refs/heads/main/update.json")
-        if ok and response.status_code == 200 then
-            local data = response.json()
-            if data and data.info and data.info.version then
-                local newVersion = tonumber(data.info.version)
-                local currentVersion = tonumber(thisScript().version)
-                if newVersion > currentVersion then
-                    sampAddChatMessage(u8:decode(string.format("{00FF00}[Update] {FFFFFF}Найдено обновление! С версии {FF0000}%s {FFFFFF}до {00FF00}%s{FFFFFF}. Загрузка...", thisScript().version, data.info.version)), -1)
-                    downloadUpdate(data.info.url)
+local dlstatus = require('moonloader').download_status
+
+function main()
+    while not isSampAvailable() do wait(100) end
+    check_update()
+    wait(-1)
+end
+
+function check_update()
+    -- РЎСЃС‹Р»РєР° РЅР° С‚РІРѕР№ РѕСЃРЅРѕРІРЅРѕР№ JSON С„Р°Р№Р»
+    local json_url = "https://raw.githubusercontent.com/legacety/NewProject/refs/heads/main/update.json"
+    local path = os.getenv('TEMP') .. '\\update_tmp.json'
+
+    downloadUrlToFile(json_url, path, function(id, status, p1, p2)
+        if status == dlstatus.STATUS_ENDDOWNLOADDATA then
+            local f = io.open(path, 'r')
+            if f then
+                local content = f:read('*a')
+                f:close()
+                os.remove(path)
+                
+                -- РСЃРїРѕР»СЊР·СѓРµРј СЃС‚СЂСѓРєС‚СѓСЂСѓ РёР· С‚РІРѕРµРіРѕ С„Р°Р№Р»Р°: {"info": {"version": "...", "url": "..."}}
+                local data = decodeJson(content)
+                if data and data.info and data.info.version ~= thisScript().version then
+                    sampAddChatMessage("{3399FF}[Update]{FFFFFF} РќР°Р№РґРµРЅР° РЅРѕРІР°СЏ РІРµСЂСЃРёСЏ: " .. data.info.version, -1)
+                    -- РљР°С‡Р°РµРј РїРѕ РїСЂСЏРјРѕР№ СЃСЃС‹Р»РєРµ РёР· JSON (data.info.url)
+                    downloadUrlToFile(data.info.url, thisScript().path, function(id, status, p1, p2)
+                        if status == dlstatus.STATUS_ENDDOWNLOADDATA then
+                            sampAddChatMessage("{3399FF}[Update]{FFFFFF} РЎРєСЂРёРїС‚ СѓСЃРїРµС€РЅРѕ РѕР±РЅРѕРІР»РµРЅ. РџРµСЂРµР·Р°РіСЂСѓР·РєР°...", -1)
+                            thisScript():reload()
+                        end
+                    end)
                 end
             end
         end
     end)
-end
-
-function downloadUpdate(url)
-    lua_thread.create(function()
-        local ok, response = pcall(requests.get, url)
-        if ok and response.status_code == 200 then
-            local file = io.open(thisScript().path, "wb")
-            if file then
-                file:write(response.content)
-                file:close()
-                sampAddChatMessage(u8:decode("{00FF00}[Update] {FFFFFF}Скрипт успешно обновлен и перезагружен!"), -1)
-                thisScript():reload()
-            end
-        else
-            sampAddChatMessage(u8:decode("{FF0000}[Update] {FFFFFF}Ошибка при скачивании обновления."), -1)
-        end
-    end)
-end
-
-function main()
-    while not isSampAvailable() do wait(100) end
-    checkUpdate()
-    wait(-1)
 end
