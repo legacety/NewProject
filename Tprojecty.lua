@@ -3,7 +3,7 @@ script_version('2')
 function checkUpdate()
     local requests = require('requests')
     local dlstatus = require('moonloader').download_status
-    local url = 'https://raw.githubusercontent.com/GovnocodedByChapo/autoupdtest/main/file.json'
+    local url = 'https://raw.githubusercontent.com/legacety/NewProject/refs/heads/main/update.json'
     
     local response = requests.get(url)
     if response.status_code == 200 then
