@@ -1,4 +1,4 @@
-script_version('0')
+script_version('2')
 
 function checkUpdate()
     local requests = require('requests')
