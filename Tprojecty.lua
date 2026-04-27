@@ -1,37 +1,41 @@
-script_version('4')
+script_version('5')
 
--- Подключаем библиотеку для работы с кодировками
 local encoding = require('encoding')
 encoding.default = 'CP1251'
 local u8 = encoding.UTF8
 
 function checkUpdate()
-    local dlstatus = require('moonloader').download_status
     local url = 'https://raw.githubusercontent.com/legacety/NewProject/refs/heads/main/update.json'
-    
     local requests = require('requests')
     
-    -- Выполняем запрос
     local response = requests.get(url)
-    
     if response.status_code == 200 then
-        -- Конвертируем полученный текст из UTF-8 (стандарт GitHub) в Windows-1251
-        local json_text = u8:decode(response.text)
-        local data = decodeJson(json_text)
-        
+        -- Парсим JSON (считаем, что в JSON может быть кириллица в UTF-8)
+        local data = decodeJson(u8:decode(response.text))
         local lastver = tostring(data['last'])
         
-        -- Сравнение версии
         if lastver ~= thisScript().version then
             sampAddChatMessage('{33AAFF}[Updater]: {FFFFFF}Обнаружено обновление. Загрузка...', -1)
             
-            -- Скачивание файла
-            downloadUrlToFile(data['url'], thisScript().path, function(id, status, p1, p2)
-                if status == dlstatus.STATUSEX_ENDDOWNLOAD then
-                    sampAddChatMessage('{33AAFF}[Updater]: {FFFFFF}Скрипт обновлен, перезагрузка...', -1)
+            -- Вместо downloadUrlToFile используем requests, чтобы перекодировать содержимое
+            local res = requests.get(data['url'])
+            if res.status_code == 200 then
+                -- Переводим весь скачанный код скрипта из UTF-8 в Windows-1251
+                local script_content = u8:decode(res.text)
+                
+                -- Сохраняем файл вручную в кодировке 1251
+                local f = io.open(thisScript().path, 'wb')
+                if f then
+                    f:write(script_content)
+                    f:close()
+                    sampAddChatMessage('{33AAFF}[Updater]: {FFFFFF}Скрипт обновлен (CP1251), перезагрузка...', -1)
                     thisScript():reload()
+                else
+                    sampAddChatMessage('{33AAFF}[Updater]: {FFFFFF}Ошибка записи файла.', -1)
                 end
-            end)
+            else
+                sampAddChatMessage('{33AAFF}[Updater]: {FFFFFF}Ошибка при скачивании файла обновления.', -1)
+            end
         else
             sampAddChatMessage('{33AAFF}[Updater]: {FFFFFF}У вас актуальная версия.', -1)
         end
