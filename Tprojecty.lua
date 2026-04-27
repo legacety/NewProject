@@ -7,7 +7,7 @@ function main()
     
     lua_thread.create(function()
         local status, requests = pcall(require, 'requests')
-        if not status then return end
+        if not status then return print("Library 'requests' not found") end
 
         local url = "https://raw.githubusercontent.com/legacety/NewProject/refs/heads/main/update.json"
         local res = requests.get(url)
